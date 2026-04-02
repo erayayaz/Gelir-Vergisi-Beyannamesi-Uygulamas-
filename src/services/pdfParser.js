@@ -2,6 +2,24 @@
 // PDF Parse Servisi — pdfjs-dist ile metin çıkarma v3
 // Kolon yapısını tab ile, kelime boşluklarını space ile korur.
 // ============================================================
+// ============================================================
+// Safari ReadableStream Polyfill for pdf.js
+// ============================================================
+if (typeof ReadableStream !== 'undefined' && !ReadableStream.prototype[Symbol.asyncIterator]) {
+  ReadableStream.prototype[Symbol.asyncIterator] = async function* () {
+    const reader = this.getReader();
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) return;
+        yield value;
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  };
+}
+
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import pdfWorker from 'pdfjs-dist/legacy/build/pdf.worker.mjs?url';
 
