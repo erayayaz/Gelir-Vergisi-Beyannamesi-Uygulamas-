@@ -6,7 +6,7 @@ Bu web uygulaması, 2025 yılı bordro PDF dosyalarını otomatik olarak okuyup 
 
 - **Masaüstü/Tarayıcı İçi Güvenlik:** PDF ayrıştırma işlemleri (parsing) tamamen tarayıcınızda gerçekleştirilir, hiçbir veri harici bir sunucuya veya buluta yüklenmez.
 - **Çoklu Format Desteği:** Standart bordro formatları, ING Hubs B.V., ScaleFocus, Nitto Bento, Çevre Mühendislik ve Aras Petrol bordro formatlarını destekler. PDF formatı taranmış imaj ise OCR tabanlı kısıtlı okuma fall-back mekanizması çalışır.
-- **2025 GVK Regülasyonları Uyumlu:** 
+- **2025 GVK Regülasyonları Uyumlu:**
   - GVK Madde 86 beyanname zorunluluğu hesabı (Eş zamanlı veya ardışık işveren)
   - GVK Madde 103 vergi dilimleri tablosu
   - GVK Madde 23/18 Asgari ücret istisnası
@@ -37,14 +37,3 @@ npm run dev
 # Production sürümünü derleyin (dist/ klasörü içerisine)
 npm run build
 ```
-
-## Deployment (Netlify)
-
-Bu proje doğrudan **Netlify** veya herhangi bir statik hosting hizmeti üzerinde çalışabilir konfigürasyondadır. SPA (Single Page Application) olduğu için `/dogrulama`, `/sonuc` gibi sayfa yönlendirmelerinde tarayıcının 404 hatası vermemesi için `netlify.toml` dosyasına `/*  /index.html  200` yönlendirmesi (redirect) eklenmiştir.
-
-### Netlify'a Deploy Etmek İçin:
-
-1. Netlify üzerinden projeyi seçin.
-2. **Build command:** `npm run build`
-3. **Publish directory:** `dist`
-4. Gelişmiş seçeneklerde environment variable kullanmanıza gerek yoktur, veri tabanı gerektirmez.
