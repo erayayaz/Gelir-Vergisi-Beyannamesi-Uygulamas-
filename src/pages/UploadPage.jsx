@@ -27,13 +27,24 @@ export default function UploadPage() {
   const addRecord = useTaxStore(s => s.addRecord);
   const updateRecord = useTaxStore(s => s.updateRecord);
   const records = useTaxStore(s => s.records);
-
   const formatTR = (val) => new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(val) + ' TL';
   const clearAll = useTaxStore(s => s.clearAll);
 
-  const [fileStatuses, setFileStatuses] = useState([]);
+  const [fileStatuses, setFileStatuses] = useState(() => {
+    return records.map(r => ({
+      id: `${r.fileName}-restored`,
+      name: r.fileName,
+      size: 0,
+      status: r.parseStatus || 'success',
+      period: r.period,
+      employer: r.employerName,
+      warnings: r.warnings,
+      error: r.error
+    }));
+  });
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [privacyAgreed, setPrivacyAgreed] = useState(localStorage.getItem('privacy_agreed') === 'true');
   const inputRef = useRef();
 
   const processFile = useCallback(async (file) => {
@@ -172,8 +183,26 @@ export default function UploadPage() {
 
   return (
     <div className="animate-in">
+      {/* Privacy Notice */}
+      {!privacyAgreed && (
+        <div style={{ marginBottom: '1.5rem', background: 'rgba(59,130,246,0.06)', borderRadius: '12px', padding: '1rem', border: '1px solid rgba(59,130,246,0.3)', display: 'flex', gap: '1rem', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div>
+            <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--accent-blue-light)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span style={{fontSize:'1.1rem'}}>🔒</span> Gizlilik ve Veri Güvenliği Taahhüdü
+            </h4>
+            <p className="text-sm" style={{ margin: 0, lineHeight: 1.5, opacity: 0.9 }}>
+              Yüklediğiniz hiçbir bordro dosyası veya finansal veri harici bir sunucuya <strong>gönderilmez, yüklenmez veya saklanmaz.</strong> Ayrıştırma ve hesaplama işlemleri %100 oranında cihazınızda (bu tarayıcıda) çevrimdışı gerçekleşmektedir. Risksiz ve KVKK'ya tam uyumludur.
+            </p>
+          </div>
+          <button className="btn btn-outline" style={{ whiteSpace: 'nowrap', padding: '0.4rem 1rem', fontSize: '0.85rem' }} onClick={() => {
+            localStorage.setItem('privacy_agreed', 'true');
+            setPrivacyAgreed(true);
+          }}>Okudum</button>
+        </div>
+      )}
+
       {/* Hero */}
-      <div style={{ textAlign: 'center', marginBottom: '2.5rem', paddingTop: '1rem' }}>
+      <div style={{ textAlign: 'center', marginBottom: '2.5rem', paddingTop: '0.5rem' }}>
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
           background: 'rgba(59,130,246,0.1)', border: '1px solid var(--border-accent)',
@@ -224,11 +253,20 @@ export default function UploadPage() {
       {fileStatuses.length > 0 && (
         <div className="card" style={{ marginBottom: '1.5rem' }}>
           <div className="flex items-center justify-between mb-2">
-            <h3>Yüklenen Dosyalar ({fileStatuses.length})</h3>
-            <div className="flex gap-1">
-              {successCount > 0 && <span className="badge badge-green">✓ {successCount}</span>}
-              {partialCount > 0 && <span className="badge badge-amber">⚠ {partialCount}</span>}
-              {failCount > 0 && <span className="badge badge-red">✗ {failCount}</span>}
+            <h3 style={{ margin: 0 }}>Yüklenen Dosyalar ({fileStatuses.length})</h3>
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1">
+                {successCount > 0 && <span className="badge badge-green">✓ {successCount}</span>}
+                {partialCount > 0 && <span className="badge badge-amber">⚠ {partialCount}</span>}
+                {failCount > 0 && <span className="badge badge-red">✗ {failCount}</span>}
+              </div>
+              <button 
+                className="btn btn-outline" 
+                style={{ padding: '0.2rem 0.6rem', fontSize: '0.8rem', borderColor: 'var(--border-accent)', borderStyle: 'dashed' }} 
+                onClick={handleClearAll}
+              >
+                🗑 Tümünü Temizle
+              </button>
             </div>
           </div>
 
@@ -256,7 +294,21 @@ export default function UploadPage() {
                     </div>
                   )}
                 </div>
-                <div className="file-meta">{(f.size / 1024).toFixed(0)} KB</div>
+                <div className="file-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span>{(f.size / 1024).toFixed(0)} KB</span>
+                  <button 
+                    onClick={() => {
+                        useTaxStore.getState().removeRecord(f.name);
+                        setFileStatuses(prev => prev.filter(item => item.id !== f.id));
+                    }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: 0.6, fontSize: '1rem', padding: '0.2rem', transition: 'opacity 0.2s' }}
+                    onMouseOver={e=>e.currentTarget.style.opacity=1} 
+                    onMouseOut={e=>e.currentTarget.style.opacity=0.6}
+                    title="Dosyayı Sil"
+                  >
+                    ❌
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -283,10 +335,7 @@ export default function UploadPage() {
       </div>
 
       {/* CTA */}
-      <div className="flex items-center justify-between" style={{ flexWrap: 'wrap', gap: '1rem' }}>
-        {fileStatuses.length > 0 && (
-          <button className="btn btn-ghost" onClick={handleClearAll}>🗑 Temizle</button>
-        )}
+      <div className="flex items-center justify-end" style={{ flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ marginLeft: 'auto' }}>
           <button
             className="btn btn-primary btn-lg pulse-glow"

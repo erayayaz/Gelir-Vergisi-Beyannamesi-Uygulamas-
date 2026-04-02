@@ -39,9 +39,9 @@ const useTaxStore = create((set, get) => ({
     get().recalculate();
   },
 
-  removeRecord: (index) => {
+  removeRecord: (fileName) => {
     set((state) => ({
-      records: state.records.filter((_, i) => i !== index),
+      records: state.records.filter((r) => r.fileName !== fileName),
     }));
     get().recalculate();
   },
