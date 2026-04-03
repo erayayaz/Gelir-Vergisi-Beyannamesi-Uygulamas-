@@ -35,11 +35,6 @@ function parseNum(str) {
 
 // ── Yardımcı Fonksiyonlar ─────────────────────────────────────
 
-/** Tab-separated bir satırdan belirli N. değeri (0-indexed) çeker */
-function tabValue(line, idx) {
-  const parts = line.split(/\t/);
-  return parts[idx] !== undefined ? parts[idx].trim() : null;
-}
 
 /** Satır sonundaki sayıyı çeker (TR veya US format) */
 function amountFromLine(line) {
@@ -59,19 +54,6 @@ function tabAmount(line) {
   return m ? m[1] : null;
 }
 
-/** Herhangi bir etiketi içeren satırlardaki ilk eşleşen tab değeri */
-function findTabVal(lines, pattern) {
-  for (const line of lines) {
-    const hit = pattern.test ? pattern.test(line) : line.includes(pattern);
-    if (hit) {
-      const v = tabAmount(line);
-      if (v) return v;
-      const v2 = amountFromLine(line);
-      if (v2) return v2;
-    }
-  }
-  return null;
-}
 
 /** Satırın herhangi bir yerinde bir label'dan sonraki sayı (mid-line arama) */
 function findMidVal(line, labelPat) {
@@ -168,7 +150,7 @@ function extractEmployerName(lines) {
 function extractPeriod(lines, fileName) {
   for (const line of lines) {
     // Format A (ScaleFocus): "Dönem:Ocak-2025" or "|Dönem:Ocak-2025"
-    const mA = line.match(/D[öo]nem\s*:?\s*([A-Za-zÇĞİÖŞÜçğışöü]+)[-\/\s]+(\d{4})/i);
+    const mA = line.match(/D[öo]nem\s*:?\s*([A-Za-zÇĞİÖŞÜçğışöü]+)[-/\s]+(\d{4})/i);
     if (mA) {
       const month = monthNumFromName(mA[1]);
       const year = parseInt(mA[2]);

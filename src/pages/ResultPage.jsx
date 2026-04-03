@@ -9,12 +9,12 @@ const C = TAX_CONSTANTS_2025;
 
 export default function ResultPage() {
   const navigate = useNavigate();
-  const records = useTaxStore(s => s.records);
+
   const employers = useTaxStore(s => s.employers);
   const declarationCheck = useTaxStore(s => s.declarationCheck);
   const taxBalance = useTaxStore(s => s.taxBalance);
   const gibTableRows = useTaxStore(s => s.gibTableRows);
-  const primaryEmployerKey = useTaxStore(s => s.primaryEmployerKey);
+
   const indirimDetayi = useTaxStore(s => s.indirimDetayi);
 
   const [copiedRow, setCopiedRow] = useState(null);
@@ -30,7 +30,6 @@ export default function ResultPage() {
     );
   }
 
-  const effectivePrimary = primaryEmployerKey || employers[0]?.key;
 
   // ---- Excel Export ----
   const exportToExcel = () => {

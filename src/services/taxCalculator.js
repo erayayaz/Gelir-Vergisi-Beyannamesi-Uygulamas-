@@ -260,7 +260,7 @@ export function checkDeclarationRequired(employers, primaryKey = null, gibRows =
   // GiB satırlarını kullan (sağlanmadıysa yeniden hesapla)
   const rows = gibRows || generateGibTableRows(employers, primaryKey);
   
-  const primaryRow = rows.find(r => primaryKey ? r.birinciIsverenMi : r.birinciIsverenMi) || rows[0];
+
   const secondaryRows = rows.filter(r => !r.birinciIsverenMi);
   
   const totalGayrisafi = rows.reduce((s, r) => s + r.gayrisafiTutar, 0);

@@ -77,7 +77,7 @@ export default function ValidationPage() {
             Hangi işvereni 1. işveren seçtiğiniz beyanname verme zorunluluğunuzu (330.000 TL aşım kuralı) değiştirebilir. Karşılaştırmalı görünüme göre seçiminizi yapabilirsiniz.
           </p>
           <div className="alert alert-info mb-2 text-xs" style={{ padding: '0.5rem 0.75rem' }}>
-            <strong>💡 İpucu:</strong> Yıl içinde iş değiştirdiyseniz (örn. önce ScaleFocus, sonra ING Hubs), kronolojik olarak ilk başladığınız firmayı 1. işveren seçmeniz GİB form mantığına daha uygundur.
+            <strong>💡 İpucu:</strong> Yıl içinde iş değiştirdiyseniz (örn. önce Google, sonra Microsoft), kronolojik olarak ilk başladığınız firmayı 1. işveren seçmeniz GİB form mantığına daha uygundur.
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {employers.map(emp => {

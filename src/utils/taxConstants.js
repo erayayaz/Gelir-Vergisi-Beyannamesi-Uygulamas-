@@ -29,8 +29,13 @@ export const TAX_CONSTANTS_2025 = {
     monthlyExemptionAvg: 3_315.70,
   },
 
-  // Damga Vergisi oranı (2025)
+  // Damga Vergisi oranı ve Sabit Damga Vergisi (2025)
   stampTaxRate: 0.00759,
+  generalStampTax: 1189.50, // Yıllık Gelir Vergisi Beyannamesi Damga Vergisi
+
+  // GVK Madde 21 — Kira (GMSİ) Mesken İstisnası (2025)
+  rentExemption: 47000,
+  rentExpenseRate: 0.15, // Götürü gider oranı %15
 
   // Ay isimleri (bordro parse için)
   monthNames: {
@@ -54,4 +59,6 @@ export const TAX_CONSTANTS_2026 = {
     monthlyGross: 33_030,
     annualGross: 396_360,
   },
+  rentExemption: 58000,
+  generalStampTax: 1400.00, // Tahmini
 };

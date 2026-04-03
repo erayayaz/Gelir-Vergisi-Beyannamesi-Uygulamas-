@@ -19,21 +19,35 @@ export const fmtNum = (amount) => {
 
 export const parseTRNumber = (str) => {
   if (!str) return 0;
+  if (typeof str === 'number') return str;
   const s = str.toString().trim();
   
-  // Find the last separator (comma or dot)
   const lastComma = s.lastIndexOf(',');
   const lastDot = s.lastIndexOf('.');
   
   let cleaned;
-  if (lastDot > lastComma) {
-    // US format: 1,234.56 or 1234.56
-    // Remove commas, keep dot
-    cleaned = s.replace(/,/g, '');
+  if (lastComma !== -1 && lastDot !== -1) {
+    if (lastDot > lastComma) {
+      cleaned = s.replace(/,/g, '');
+    } else {
+      cleaned = s.replace(/\./g, '').replace(',', '.');
+    }
+  } else if (lastDot !== -1) {
+    const digitsAfterDot = s.length - 1 - lastDot;
+    if (digitsAfterDot === 3) {
+      cleaned = s.replace(/\./g, '');
+    } else {
+      cleaned = s;
+    }
+  } else if (lastComma !== -1) {
+    const digitsAfterComma = s.length - 1 - lastComma;
+    if (digitsAfterComma === 3) {
+       cleaned = s.replace(/,/g, '');
+    } else {
+       cleaned = s.replace(',', '.');
+    }
   } else {
-    // TR format: 1.234,56 or 1234,56
-    // Remove dots, replace comma with dot
-    cleaned = s.replace(/\./g, '').replace(',', '.');
+    cleaned = s;
   }
   
   const num = parseFloat(cleaned);
@@ -55,4 +69,18 @@ export const copyToClipboard = async (text) => {
   } catch {
     return false;
   }
+};
+
+export const formatCurrencyInput = (val) => {
+  if (val === null || val === undefined) return '';
+  let str = val.toString();
+  str = str.replace(/[^0-9,]/g, '');
+  const parts = str.split(',');
+  let intPart = parts[0];
+  let decPart = parts.length > 1 ? parts[1].slice(0, 2) : undefined;
+  intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  if (decPart !== undefined) {
+    return `${intPart},${decPart}`;
+  }
+  return intPart;
 };

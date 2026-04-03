@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import useTaxStore from '../store/useTaxStore.js';
 import { extractTextFromPdf, isScannedPdf } from '../services/pdfParser.js';
 import { extractBordroFields } from '../services/bordroExtractor.js';
+import { formatCurrencyInput, parseTRNumber } from '../utils/formatters.js';
 
 const STATUS_ICONS = {
   pending: '⏳',
@@ -39,12 +40,19 @@ export default function UploadPage() {
       period: r.period,
       employer: r.employerName,
       warnings: r.warnings,
-      error: r.error
+      error: r.error,
+      matrah: r.gvTaxBase,
+      kesilen: r.incomeTax
     }));
   });
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [privacyAgreed, setPrivacyAgreed] = useState(localStorage.getItem('privacy_agreed') === 'true');
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+  const [manualData, setManualData] = useState({
+    month: 1, year: 2025, employerName: '', grossSalary: '', gvTaxBase: '', incomeTax: ''
+  });
   const inputRef = useRef();
 
   const processFile = useCallback(async (file) => {
@@ -135,6 +143,8 @@ export default function UploadPage() {
           period: record.period,
           employer: record.employerName,
           warnings: record.warnings,
+          matrah: record.gvTaxBase,
+          kesilen: record.incomeTax
         } : f));
       }
     } catch (err) {
@@ -177,6 +187,40 @@ export default function UploadPage() {
     setFileStatuses([]);
   };
 
+  const submitManual = () => {
+    const errors = {};
+    if (!manualData.employerName) errors.employerName = true;
+    if (!manualData.gvTaxBase) errors.gvTaxBase = true;
+    if (!manualData.incomeTax) errors.incomeTax = true;
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    setFormErrors({});
+
+    const id = `manual-${Date.now()}`;
+    const matrahVal = parseTRNumber(manualData.gvTaxBase);
+    const kesilenVal = parseTRNumber(manualData.incomeTax);
+    
+    const record = {
+      fileName: 'Manuel Giriş',
+      parseStatus: 'success',
+      employerName: manualData.employerName,
+      period: `${String(manualData.month).padStart(2, '0')}.${manualData.year}`,
+      month: parseInt(manualData.month),
+      year: parseInt(manualData.year),
+      grossSalary: parseTRNumber(manualData.grossSalary || 0),
+      gvTaxBase: matrahVal,
+      incomeTax: kesilenVal,
+      warnings: [],
+      error: null
+    };
+    addRecord(record);
+    setFileStatuses(prev => [...prev, { id, name: 'Manuel İlave Edildi', size: 0, status: 'success', period: record.period, employer: record.employerName, matrah: matrahVal, kesilen: kesilenVal }]);
+    setManualData({ ...manualData, month: manualData.month === 12 ? 1 : manualData.month + 1, employerName: '', gvTaxBase: '', incomeTax: '', grossSalary: '' });
+  };
+
   const successCount = fileStatuses.filter(f => f.status === 'success').length;
   const partialCount = fileStatuses.filter(f => ['partial', 'ocr'].includes(f.status)).length;
   const failCount = fileStatuses.filter(f => f.status === 'failed').length;
@@ -185,7 +229,7 @@ export default function UploadPage() {
     <div className="animate-in">
       {/* Privacy Notice */}
       {!privacyAgreed && (
-        <div style={{ marginBottom: '1.5rem', background: 'rgba(59,130,246,0.06)', borderRadius: '12px', padding: '1rem', border: '1px solid rgba(59,130,246,0.3)', display: 'flex', gap: '1rem', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div style={{ marginBottom: '1.5rem', background: 'rgba(59,130,246,0.06)', borderRadius: '12px', padding: '1rem', border: '1px solid rgba(59,130,246,0.3)', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--accent-blue-light)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <span style={{fontSize:'1.1rem'}}>🔒</span> Gizlilik ve Veri Güvenliği Taahhüdü
@@ -224,16 +268,16 @@ export default function UploadPage() {
         onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
         onDragLeave={() => setIsDragOver(false)}
         onClick={(e) => {
-          if (e.detail > 1) return; // Prevent double-clicks from queueing multiple dialogs
+          if (e.detail > 1) return;
           if (e.target !== inputRef.current) {
             inputRef.current?.click();
           }
         }}
-        style={{ marginBottom: '1.5rem' }}
+        style={{ marginBottom: '1rem' }}
       >
         <input ref={inputRef} type="file" accept=".pdf" multiple onChange={(e) => {
           handleFiles(e.target.files);
-          e.target.value = null; // Reset input so same files can be chosen again if needed
+          e.target.value = null;
         }} />
         <span className="dropzone-icon">📂</span>
         <div className="dropzone-title">
@@ -249,13 +293,63 @@ export default function UploadPage() {
         )}
       </div>
 
+      <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+        <button className="btn btn-ghost" onClick={() => setShowManualForm(!showManualForm)} style={{ fontSize: '0.85rem' }}>
+          {showManualForm ? '⬆ Manuel Girişi Kapat' : '✍️ PDF İstemiyorum, Verileri Elle Gireceğim'}
+        </button>
+      </div>
+
+      {showManualForm && (
+        <div className="card mb-3" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-accent)' }}>
+          <h4 style={{ marginBottom: '1rem' }}>Manuel Bordro Verisi Ekle</h4>
+          <div className="grid-2" style={{ gap: '0.75rem' }}>
+            <div>
+              <label className="text-xs text-muted">Dönem (Ay)</label>
+              <input type="number" className="input" value={manualData.month} onChange={e=>setManualData({...manualData, month: e.target.value})} min={1} max={12} />
+            </div>
+            <div>
+              <label className="text-xs text-muted">İşveren Adı</label>
+              <input type="text" className="input" style={formErrors.employerName ? { border: '1px solid var(--accent-red)' } : {}} value={manualData.employerName} onChange={e=>{setManualData({...manualData, employerName: e.target.value}); setFormErrors({...formErrors, employerName: false})}} placeholder="Firma A.Ş." />
+            </div>
+            <div>
+              <label className="text-xs text-muted mb-1 block flex items-center">
+                Matrah (TL)
+                <div className="tooltip-container" style={{ marginLeft: '0.35rem', color: 'var(--accent-blue)', background: 'rgba(59,130,246,0.1)', width: '16px', height: '16px', borderRadius: '50%', fontSize: '10px' }}>
+                  ?
+                  <span className="tooltip-text">Aylık vergi matrahınızı giriniz. Tüm istisnaların düşüldükten sonra kalan matrahtır (istisna dahil edilmelidir).</span>
+                </div>
+              </label>
+              <input type="text" className="input" style={formErrors.gvTaxBase ? { border: '1px solid var(--accent-red)' } : {}} value={manualData.gvTaxBase} onChange={e=>{setManualData({...manualData, gvTaxBase: formatCurrencyInput(e.target.value)}); setFormErrors({...formErrors, gvTaxBase: false})}} placeholder="25.000,00" />
+            </div>
+            <div>
+              <label className="text-xs text-muted mb-1 block flex items-center">
+                Kesilen GV (TL)
+                <div className="tooltip-container" style={{ marginLeft: '0.35rem', color: 'var(--accent-blue)', background: 'rgba(59,130,246,0.1)', width: '16px', height: '16px', borderRadius: '50%', fontSize: '10px' }}>
+                  ?
+                  <span className="tooltip-text">Aylık kesilen gelir vergisi (istisna uygulanmamış haliyle bordronuzda yer alan fiyatı girmeye özen gösteriniz).</span>
+                </div>
+              </label>
+              <input type="text" className="input" style={formErrors.incomeTax ? { border: '1px solid var(--accent-red)' } : {}} value={manualData.incomeTax} onChange={e=>{setManualData({...manualData, incomeTax: formatCurrencyInput(e.target.value)}); setFormErrors({...formErrors, incomeTax: false})}} placeholder="3.750,00" />
+            </div>
+            <div>
+              <label className="text-xs text-muted">Brüt Ücret (Opsiyonel)</label>
+              <input type="text" className="input" value={manualData.grossSalary} onChange={e=>setManualData({...manualData, grossSalary: formatCurrencyInput(e.target.value)})} placeholder="30.000,00" />
+            </div>
+            <div className="flex flex-col justify-end">
+              <label className="text-xs text-muted opacity-0 pointer-events-none mb-1 block">Gizli</label>
+              <button className="btn btn-primary" style={{ width: '100%', padding: '0.5rem 1rem' }} onClick={submitManual}>Satırı Ekle</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* File list */}
       {fileStatuses.length > 0 && (
         <div className="card" style={{ marginBottom: '1.5rem' }}>
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2" style={{ flexWrap: 'wrap', gap: '0.75rem' }}>
             <h3 style={{ margin: 0 }}>Yüklenen Dosyalar ({fileStatuses.length})</h3>
-            <div className="flex items-center gap-2">
-              <div className="flex gap-1">
+            <div className="flex items-center gap-2" style={{ flexWrap: 'wrap' }}>
+              <div className="flex gap-1" style={{ flexWrap: 'wrap' }}>
                 {successCount > 0 && <span className="badge badge-green">✓ {successCount}</span>}
                 {partialCount > 0 && <span className="badge badge-amber">⚠ {partialCount}</span>}
                 {failCount > 0 && <span className="badge badge-red">✗ {failCount}</span>}
@@ -272,7 +366,7 @@ export default function UploadPage() {
 
           <div className="file-list">
             {fileStatuses.map(f => (
-              <div key={f.id} className="file-item">
+              <div key={f.id} className="file-item" style={{ flexWrap: 'wrap' }}>
                 <span className="file-status-icon">{STATUS_ICONS[f.status] || '⏳'}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="file-name">{f.name}</div>
@@ -280,6 +374,8 @@ export default function UploadPage() {
                     {STATUS_LABELS[f.status]}
                     {f.employer && f.employer !== 'Bilinmiyor' && ` · ${f.employer}`}
                     {f.period && ` · ${f.period}`}
+                    {f.matrah !== undefined && ` · Matrah: ${new Intl.NumberFormat('tr-TR', {minimumFractionDigits: 2}).format(f.matrah)} TL`}
+                    {f.kesilen !== undefined && ` · Kesilen: ${new Intl.NumberFormat('tr-TR', {minimumFractionDigits: 2}).format(f.kesilen)} TL`}
                   </div>
                   {f.warnings && f.warnings.length > 0 && (
                     <div style={{ marginTop: '0.25rem' }}>
@@ -335,16 +431,15 @@ export default function UploadPage() {
       </div>
 
       {/* CTA */}
-      <div className="flex items-center justify-end" style={{ flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ marginLeft: 'auto' }}>
-          <button
-            className="btn btn-primary btn-lg pulse-glow"
-            disabled={records.length === 0}
-            onClick={() => navigate('/dogrulama')}
-          >
-            Verileri Doğrula →
-          </button>
-        </div>
+      <div style={{ marginTop: '2rem' }}>
+        <button
+          className="btn btn-primary btn-lg pulse-glow"
+          style={{ width: '100%', justifyContent: 'center' }}
+          disabled={records.length === 0}
+          onClick={() => navigate('/dogrulama')}
+        >
+          {records.length > 0 ? `Verileri Doğrula (${records.length} Kayıt) →` : 'Verileri Doğrula →'}
+        </button>
       </div>
     </div>
   );
