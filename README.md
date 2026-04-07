@@ -5,7 +5,7 @@ Bu web uygulaması, 2025 yılı bordro PDF dosyalarını otomatik olarak okuyup 
 ## Özellikler
 
 - **Masaüstü/Tarayıcı İçi Güvenlik:** PDF ayrıştırma işlemleri (parsing) tamamen tarayıcınızda gerçekleştirilir, hiçbir veri harici bir sunucuya veya buluta yüklenmez.
-- **Çoklu Format Desteği:** Standart bordro formatları, ING Hubs B.V., ScaleFocus, Nitto Bento, Çevre Mühendislik ve Aras Petrol bordro formatlarını destekler. PDF formatı taranmış imaj ise OCR tabanlı kısıtlı okuma fall-back mekanizması çalışır.
+- **Çoklu Format Desteği:** Standart bordro formatlarını destekler. PDF formatı taranmış imaj ise OCR tabanlı kısıtlı okuma fall-back mekanizması çalışır.
 - **2025 GVK Regülasyonları Uyumlu:**
   - GVK Madde 86 beyanname zorunluluğu hesabı (Eş zamanlı veya ardışık işveren)
   - GVK Madde 103 vergi dilimleri tablosu
